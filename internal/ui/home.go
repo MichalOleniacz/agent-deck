@@ -883,9 +883,10 @@ func (h *Home) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "f":
 		// Quick fork session (same title with " (fork)" suffix)
+		// Only available when session has a valid Claude session ID
 		if h.cursor < len(h.flatItems) {
 			item := h.flatItems[h.cursor]
-			if item.Type == session.ItemTypeSession && item.Session != nil {
+			if item.Type == session.ItemTypeSession && item.Session != nil && item.Session.CanFork() {
 				return h, h.quickForkSession(item.Session)
 			}
 		}
@@ -893,9 +894,10 @@ func (h *Home) handleMainKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "F", "shift+f":
 		// Fork with dialog (customize title and group)
+		// Only available when session has a valid Claude session ID
 		if h.cursor < len(h.flatItems) {
 			item := h.flatItems[h.cursor]
-			if item.Type == session.ItemTypeSession && item.Session != nil {
+			if item.Type == session.ItemTypeSession && item.Session != nil && item.Session.CanFork() {
 				return h, h.forkSessionWithDialog(item.Session)
 			}
 		}
@@ -1564,12 +1566,19 @@ func (h *Home) renderHelpBar() string {
 			contextTitle = "Session selected"
 			contextHints = []string{
 				h.helpKey("Enter", "Attach"),
-				h.helpKey("f", "Fork"),
-				h.helpKey("F", "Fork (custom)"),
+			}
+			// Only show fork hints if session has a valid Claude session ID
+			if item.Session != nil && item.Session.CanFork() {
+				contextHints = append(contextHints,
+					h.helpKey("f", "Fork"),
+					h.helpKey("F", "Fork (custom)"),
+				)
+			}
+			contextHints = append(contextHints,
 				h.helpKey("R", "Rename"),
 				h.helpKey("m", "Move to group"),
 				h.helpKey("d", "Delete"),
-			}
+			)
 		}
 	}
 
